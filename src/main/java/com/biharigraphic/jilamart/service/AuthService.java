@@ -21,12 +21,15 @@ import com.biharigraphic.jilamart.user.exception.UserException;
 import com.biharigraphic.jilamart.user.repository.UserRepository;
 import com.biharigraphic.jilamart.wallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -43,11 +46,13 @@ public class AuthService {
     // Register a new user
     public void register(RegisterRequest request) {
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            authExceptionHandler.handleUsernameExists(new UsernameAlreadyExistsException("Username already exists"));
+            throw new UsernameAlreadyExistsException("Username "+request.getUsername()+" already exists");
+        }else {
+            log.info("username is new so we accept for register!");
         }
 
         if (userRepository.existsByPhoneNumber(request.getPhoneNumber()))
-            authExceptionHandler.handleUserException(new UserException("user already registered with given phone number!"));
+            throw (new UserException("user already registered with given phone number!"));
 
 
         // Assign role
@@ -55,14 +60,12 @@ public class AuthService {
         if (request.getRoleName() == null || request.getRoleName().isEmpty()) {
             userRole = roleRepository.findByName(RoleName.ROLE_USER)
                     .orElseGet(() -> {
-                        authExceptionHandler.handleRuntime(new RuntimeException("Default role not found"));
-                        return null; // or throw after handling
+                        throw (new RuntimeException("Default role not found"));
                     });
         } else {
             userRole = roleRepository.findByName(RoleName.valueOf(request.getRoleName()))
                     .orElseGet(() -> {
-                        authExceptionHandler.handleRuntime(new RuntimeException("Role not found: " + request.getRoleName()));
-                        return null;
+                        throw (new RuntimeException("Role not found: " + request.getRoleName()));
                     });
         }
 
@@ -91,7 +94,7 @@ public class AuthService {
     // Login user
     public TokenResponse login(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("Invalid username found!!!"));
+                .orElseThrow(() -> new RuntimeException("username not found !"));
 
         if ( !passwordEncoder.matches(request.getPassword() , user.getPassword())) {
             throw new RuntimeException("Invalid password");

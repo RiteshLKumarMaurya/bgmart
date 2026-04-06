@@ -32,6 +32,7 @@ public class AuthController {
         return ResponseEntity.ok(otpAuthService.loginWithOtp(request.getFirebaseToken()));
     }
 
+    //V1
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         authService.register(request);
@@ -39,6 +40,7 @@ public class AuthController {
     }
 
 
+    //V1
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
@@ -67,13 +69,16 @@ public class AuthController {
         return ResponseEntity.ok(authService.changeUsername(request));
     }
 
+
     @PostMapping("/change-password")
     public ResponseEntity<ChangePasswordResponse> changePassword(@RequestBody ChangePasswordRequest request) {
         return ResponseEntity.ok(authService.changePassword(request));
     }
 
+
     @PostMapping("/google-login")
     public ResponseEntity<TokenResponse> googleLogin(@RequestBody GoogleLoginRequest request) {
         return ResponseEntity.ok(googleAuthService.googleLogin(request));
     }
+
 }

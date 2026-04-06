@@ -36,7 +36,9 @@ public class User extends BaseEntity implements UserDetails {
 
     private String fullName;//profile info
 
+    @Column(name = "phone_number", unique = true)
     private String phoneNumber;//profile info
+
     private String profilePictureUrl;//profile info
 
     @Column(unique = true, nullable = true)
