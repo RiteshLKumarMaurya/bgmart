@@ -1,15 +1,17 @@
-package com.biharigraphic.jilamart.handler;
+package com.biharigraphic.jilamart.payload;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class ApiResponse<T> {
-    private int statusCode;
+    private boolean success;
     private String message;
-    private boolean error;
-    private T data;  // ✅ payload can be service details, list, or null
+    private T data;
+    private String errorCode;
 }

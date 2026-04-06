@@ -1,0 +1,13 @@
+package com.biharigraphic.jilamart.exception.enums;
+
+public enum ErrorCode {
+    USERNAME_NOT_FOUND,
+    PHONE_REGISTERED,
+    INVALID_PASSWORD,
+    ROLE_NOT_FOUND,
+    WRONG_PASSWORD_ENTERED,
+    USER_ROLE_NOT_MATCHED,
+    INVALID_OR_EXPIRED_TOKEN,
+    USER_NOT_FOUND_FOR_USERNAME,
+    INVALID_GOOGLE_ID_TOKEN
+}

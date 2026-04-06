@@ -1,10 +1,12 @@
-// src/main/java/com/brizerhero/BrizerHero/auth/dto/request/GoogleLoginRequest.java
 package com.biharigraphic.jilamart.auth.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
 public class GoogleLoginRequest {
-    private String idToken;// token you get from Android Google Sign-In
-    private String Role;
+
+    @NotBlank(message = "Google ID token is required")
+    private String idToken;
+
 }

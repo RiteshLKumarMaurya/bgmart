@@ -2,83 +2,144 @@ package com.biharigraphic.jilamart.auth.controller;
 
 import com.biharigraphic.jilamart.auth.dto.req.OtpLoginRequest;
 import com.biharigraphic.jilamart.auth.dto.request.*;
-import com.biharigraphic.jilamart.auth.dto.response.ChangePasswordResponse;
-import com.biharigraphic.jilamart.auth.dto.response.ChangeUsernameResponse;
-import com.biharigraphic.jilamart.auth.dto.response.RefreshTokenResponse;
-import com.biharigraphic.jilamart.auth.dto.response.TokenResponse;
+import com.biharigraphic.jilamart.auth.dto.response.*;
 import com.biharigraphic.jilamart.auth.service.GoogleAuthService;
 import com.biharigraphic.jilamart.auth.service.OtpAuthService;
+import com.biharigraphic.jilamart.payload.ApiResponse;
 import com.biharigraphic.jilamart.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @CrossOrigin("*")
 public class AuthController {
+
     private final AuthService authService;
     private final GoogleAuthService googleAuthService;
-
-
-    /// OTP LOGIN
     private final OtpAuthService otpAuthService;
 
+    // ✅ OTP LOGIN
     @PostMapping("/otp-login")
-    public ResponseEntity<TokenResponse> otpLogin(@RequestBody OtpLoginRequest request) {
-        return ResponseEntity.ok(otpAuthService.loginWithOtp(request.getFirebaseToken()));
+    public ResponseEntity<ApiResponse<TokenResponse>> otpLogin(@Valid @RequestBody OtpLoginRequest request) {
+        TokenResponse response = otpAuthService.loginWithOtp(request.getFirebaseToken());
+
+        return ResponseEntity.ok(
+                ApiResponse.<TokenResponse>builder()
+                        .success(true)
+                        .message("Login successful")
+                        .data(response)
+                        .build()
+        );
     }
 
-    //V1
+    // ✅ REGISTER
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<ApiResponse<Void>> register(@Valid @RequestBody RegisterRequest request) {
         authService.register(request);
-        return ResponseEntity.ok("User registered successfully");
+
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .success(true)
+                        .message("User registered successfully")
+                        .data(null)
+                        .build()
+        );
     }
 
-
-    //V1
+    // ✅ LOGIN
     @PostMapping("/login")
-    public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+    public ResponseEntity<ApiResponse<TokenResponse>> login(@Valid @RequestBody LoginRequest request) {
+        TokenResponse response = authService.login(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.<TokenResponse>builder()
+                        .success(true)
+                        .message("Login successful")
+                        .data(response)
+                        .build()
+        );
     }
 
-
+    // ✅ VALIDATE TOKEN
     @PostMapping("/validate")
-    public ResponseEntity<?> validate(@RequestHeader("Authorization") String accessToken) {
+    public ResponseEntity<ApiResponse<Boolean>> validate(@Valid @RequestHeader("Authorization") String accessToken) {
 
         if (accessToken.startsWith("Bearer ")) {
-            accessToken = accessToken.substring(7); // Remove "Bearer "
+            accessToken = accessToken.substring(7);
         }
 
         boolean valid = authService.validate(accessToken);
-        return valid ? ResponseEntity.ok("Token valid") : ResponseEntity.status(401).body("Invalid token");
+
+        return ResponseEntity.ok(
+                ApiResponse.<Boolean>builder()
+                        .success(valid)
+                        .message(valid ? "Token valid" : "Invalid token")
+                        .data(valid)
+                        .build()
+        );
     }
 
+    // ✅ REFRESH TOKEN
     @PostMapping("/refresh")
-    public ResponseEntity<RefreshTokenResponse> refresh(@RequestBody RefreshRequest request) {
-        return ResponseEntity.ok(authService.refresh(request.getRefreshToken()));
+    public ResponseEntity<ApiResponse<RefreshTokenResponse>> refresh(@Valid @RequestBody RefreshRequest request) {
+
+        RefreshTokenResponse response = authService.refresh(request.getRefreshToken());
+
+        return ResponseEntity.ok(
+                ApiResponse.<RefreshTokenResponse>builder()
+                        .success(true)
+                        .message("Token refreshed successfully")
+                        .data(response)
+                        .build()
+        );
     }
 
-
+    // ✅ CHANGE USERNAME
     @PostMapping("/change-username")
-    public ResponseEntity<ChangeUsernameResponse> changeUsername(@RequestBody ChangeUsernameRequest request) {
-        return ResponseEntity.ok(authService.changeUsername(request));
+    public ResponseEntity<ApiResponse<ChangeUsernameResponse>> changeUsername(@Valid @RequestBody ChangeUsernameRequest request) {
+
+        ChangeUsernameResponse response = authService.changeUsername(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.<ChangeUsernameResponse>builder()
+                        .success(true)
+                        .message("Username updated successfully")
+                        .data(response)
+                        .build()
+        );
     }
 
-
+    // ✅ CHANGE PASSWORD
     @PostMapping("/change-password")
-    public ResponseEntity<ChangePasswordResponse> changePassword(@RequestBody ChangePasswordRequest request) {
-        return ResponseEntity.ok(authService.changePassword(request));
+    public ResponseEntity<ApiResponse<ChangePasswordResponse>> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+
+        ChangePasswordResponse response = authService.changePassword(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.<ChangePasswordResponse>builder()
+                        .success(true)
+                        .message("Password updated successfully")
+                        .data(response)
+                        .build()
+        );
     }
 
-
+    // ✅ GOOGLE LOGIN
     @PostMapping("/google-login")
-    public ResponseEntity<TokenResponse> googleLogin(@RequestBody GoogleLoginRequest request) {
-        return ResponseEntity.ok(googleAuthService.googleLogin(request));
-    }
+    public ResponseEntity<ApiResponse<TokenResponse>> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
 
+        TokenResponse response = googleAuthService.googleLogin(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.<TokenResponse>builder()
+                        .success(true)
+                        .message("Google login successful")
+                        .data(response)
+                        .build()
+        );
+    }
 }

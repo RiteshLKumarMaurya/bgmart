@@ -1,6 +1,6 @@
 package com.biharigraphic.jilamart.auth.exception_handler;
 
-import com.biharigraphic.jilamart.UsernameAlreadyExistsException;
+import com.biharigraphic.jilamart.exception.user.UsernameAlreadyExistsException;
 import com.biharigraphic.jilamart.user.exception.UserException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

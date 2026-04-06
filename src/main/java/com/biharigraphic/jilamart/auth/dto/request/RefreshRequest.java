@@ -1,10 +1,11 @@
-
-
-// src/main/java/com/brizerhero/lockeryard/dtos/RefreshRequest.java
 package com.biharigraphic.jilamart.auth.dto.request;
+
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
 public class RefreshRequest {
+
+    @NotBlank(message = "Refresh token is required")
     private String refreshToken;
 }
