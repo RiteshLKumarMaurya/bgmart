@@ -16,20 +16,11 @@ public class FirebaseConfig {
     @PostConstruct
     public void init() {
         try {
-
             InputStream serviceAccount;
 
-<<<<<<< HEAD
+            // 🔥 Render path
             String path = "/etc/secrets/firebase-service-account.json";
             File file = new File(path);
-
-            if (file.exists()) {
-                serviceAccount = new FileInputStream(file);
-                System.out.println("🔥 Firebase loaded from Render secrets");
-            } else {
-=======
-            String renderPath = "/etc/secrets/firebase-service-account.json";
-            File file = new File(renderPath);
 
             if (file.exists()) {
                 // ✅ Production (Render)
@@ -37,22 +28,14 @@ public class FirebaseConfig {
                 System.out.println("🔥 Firebase loaded from Render secrets");
             } else {
                 // ✅ Local (resources)
->>>>>>> 3817eeb (fix firebase production config)
                 serviceAccount = getClass().getClassLoader()
                         .getResourceAsStream("firebase-service-account.json");
 
                 if (serviceAccount == null) {
-<<<<<<< HEAD
-                    throw new RuntimeException("Firebase config not found");
-                }
-
-                System.out.println("🔥 Firebase loaded from local");
-=======
                     throw new RuntimeException("❌ Firebase config file not found in resources");
                 }
 
                 System.out.println("🔥 Firebase loaded from local resources");
->>>>>>> 3817eeb (fix firebase production config)
             }
 
             FirebaseOptions options = FirebaseOptions.builder()
@@ -61,20 +44,13 @@ public class FirebaseConfig {
 
             if (FirebaseApp.getApps().isEmpty()) {
                 FirebaseApp.initializeApp(options);
-<<<<<<< HEAD
             }
 
-        } catch (Exception e) {
-=======
-                System.out.println("✅ Firebase initialized successfully");
-            }
+            System.out.println("✅ Firebase initialized successfully");
 
         } catch (Exception e) {
             System.err.println("❌ Firebase initialization failed: " + e.getMessage());
             e.printStackTrace();
-
-            // ❗ Optional: app crash karwana hai ya nahi
->>>>>>> 3817eeb (fix firebase production config)
             throw new RuntimeException(e);
         }
     }
