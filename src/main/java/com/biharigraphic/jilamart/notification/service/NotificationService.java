@@ -1,50 +1,25 @@
 package com.biharigraphic.jilamart.notification.service;
 
-import com.biharigraphic.jilamart.notification.entity.DeviceToken;
-import com.biharigraphic.jilamart.notification.entity.Notification;
-import com.biharigraphic.jilamart.notification.repo.DeviceTokenRepository;
-import com.biharigraphic.jilamart.notification.repo.NotificationRepository;
+import com.biharigraphic.jilamart.notification.dto.NotificationRequest;
+import com.biharigraphic.jilamart.notification.dto.NotificationResponse;
+import com.biharigraphic.jilamart.notification.enums.NotificationType;
 import com.biharigraphic.jilamart.user.entity.User;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
+public interface NotificationService {
 
-@Service
-@RequiredArgsConstructor
-public class NotificationService {
+    void createNotification(NotificationRequest request);
 
-    private final DeviceTokenRepository deviceTokenRepository;
-    private final NotificationRepository notificationRepository;
+    List<NotificationResponse> getUserNotifications(User user);
 
+    void markAsRead(Long notificationId, User user);
 
-    public void sendToAdmins(List<User> admins, String title, String message) {
+    long getUnreadCount(User user);
 
-        for (User admin : admins) {
-            sendPush(admin.getFcmToken(), title, message);
-        }
-    }
+    void notifyLogin(User user, String currentToken);
 
-    private void sendPush(String token, String title, String body) {
-        // Firebase logic
-    }
+    // 🔥 NEW METHODS
+    void sendToUser(User user, String title, String message);
 
-    public void sendToUser(User user, String title, String message) {
-
-        List<DeviceToken> tokens = deviceTokenRepository.findByUser(user);
-
-        for (DeviceToken dt : tokens) {
-            sendPush(dt.getToken(), title, message);
-        }
-
-        // 🔹 DB save
-        Notification n = new Notification();
-        n.setUser(user);
-        n.setTitle(title);
-        n.setMessage(message);
-
-        notificationRepository.save(n);
-    }
-
-
+    void sendToUser(User user, String title, String message, String imageUrl, String redirectUrl, NotificationType notificationType);
 }

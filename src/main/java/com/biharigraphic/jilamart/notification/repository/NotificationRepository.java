@@ -1,4 +1,4 @@
-package com.biharigraphic.jilamart.notification.repo;
+package com.biharigraphic.jilamart.notification.repository;
 
 import com.biharigraphic.jilamart.notification.entity.Notification;
 import com.biharigraphic.jilamart.user.entity.User;
@@ -19,4 +19,5 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     long countByUserAndReadFalse(User user);
 
     List<Notification> findByUserIsNull(); // broadcast
+
 }

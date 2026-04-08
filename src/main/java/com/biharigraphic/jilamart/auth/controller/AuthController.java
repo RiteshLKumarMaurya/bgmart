@@ -1,26 +1,36 @@
 package com.biharigraphic.jilamart.auth.controller;
 
+import com.biharigraphic.jilamart.auth.dto.*;
 import com.biharigraphic.jilamart.auth.dto.req.OtpLoginRequest;
 import com.biharigraphic.jilamart.auth.dto.request.*;
 import com.biharigraphic.jilamart.auth.dto.response.*;
-import com.biharigraphic.jilamart.auth.service.GoogleAuthService;
-import com.biharigraphic.jilamart.auth.service.OtpAuthService;
+import com.biharigraphic.jilamart.auth.service.impl.GoogleAuthServiceImpl;
+import com.biharigraphic.jilamart.auth.service.impl.OtpAuthServiceImpl;
+import com.biharigraphic.jilamart.enums.TokenType;
+import com.biharigraphic.jilamart.exception.InvalidOrExpiredTokenException;
+import com.biharigraphic.jilamart.exception.enums.ErrorCode;
 import com.biharigraphic.jilamart.payload.ApiResponse;
-import com.biharigraphic.jilamart.service.AuthService;
+import com.biharigraphic.jilamart.profile.controller.ProfileController;
+import com.biharigraphic.jilamart.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @CrossOrigin("*")
 public class AuthController {
 
+    private final ProfileController profileController;
+
     private final AuthService authService;
-    private final GoogleAuthService googleAuthService;
-    private final OtpAuthService otpAuthService;
+    private final GoogleAuthServiceImpl googleAuthService;
+    private final OtpAuthServiceImpl otpAuthService;
 
     // ✅ OTP LOGIN
     @PostMapping("/otp-login")
@@ -38,25 +48,27 @@ public class AuthController {
 
     // ✅ REGISTER
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<Void>> register(@Valid @RequestBody RegisterRequest request) {
-        authService.register(request);
+    public ResponseEntity<ApiResponse<PhonePasswordRegisterResponse>> register(@Valid @RequestBody RegisterRequest request) {
+        PhonePasswordRegisterResponse response = authService.register(request);
+
 
         return ResponseEntity.ok(
-                ApiResponse.<Void>builder()
+                ApiResponse.<PhonePasswordRegisterResponse>builder()
                         .success(true)
                         .message("User registered successfully")
-                        .data(null)
+                        .data(response)
                         .build()
         );
     }
 
     // ✅ LOGIN
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<TokenResponse>> login(@Valid @RequestBody LoginRequest request) {
-        TokenResponse response = authService.login(request);
+    public ResponseEntity<ApiResponse<PhonePasswordLoginResponse>> login
+    (@Valid @RequestBody LoginRequest request) {
+        PhonePasswordLoginResponse response = authService.login(request);
 
         return ResponseEntity.ok(
-                ApiResponse.<TokenResponse>builder()
+                ApiResponse.<PhonePasswordLoginResponse>builder()
                         .success(true)
                         .message("Login successful")
                         .data(response)
@@ -66,13 +78,14 @@ public class AuthController {
 
     // ✅ VALIDATE TOKEN
     @PostMapping("/validate")
-    public ResponseEntity<ApiResponse<Boolean>> validate(@Valid @RequestHeader("Authorization") String accessToken) {
+    public ResponseEntity<ApiResponse<Boolean>>
+    validate(@RequestHeader("Authorization") String accessToken) {
 
         if (accessToken.startsWith("Bearer ")) {
             accessToken = accessToken.substring(7);
         }
 
-        boolean valid = authService.validate(accessToken);
+        boolean valid = authService.validate(accessToken, TokenType.ACCESS_TOKEN);
 
         return ResponseEntity.ok(
                 ApiResponse.<Boolean>builder()
@@ -84,10 +97,24 @@ public class AuthController {
     }
 
     // ✅ REFRESH TOKEN
-    @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<RefreshTokenResponse>> refresh(@Valid @RequestBody RefreshRequest request) {
 
-        RefreshTokenResponse response = authService.refresh(request.getRefreshToken());
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<RefreshTokenResponse>>
+    refresh(@RequestHeader("Authorization") String refreshToken
+            ) {
+
+        log.info("refresh token in /refresh: {}", refreshToken);
+
+
+        if (refreshToken.startsWith("Bearer ")) {
+            refreshToken = refreshToken.substring(7);
+        }
+
+        if (!authService.validate(refreshToken, TokenType.REFRESH_TOKEN)) {
+            throw new InvalidOrExpiredTokenException(refreshToken);
+        }
+
+        RefreshTokenResponse response = authService.refresh(refreshToken);
 
         return ResponseEntity.ok(
                 ApiResponse.<RefreshTokenResponse>builder()
@@ -128,6 +155,35 @@ public class AuthController {
         );
     }
 
+
+    @PostMapping("/change-phone")
+    public ResponseEntity<ApiResponse<ChangePhoneNumberResponse>> changePhoneNumber(@Valid @RequestBody ChangePhoneNumberRequest request) {
+
+        ChangePhoneNumberResponse response = authService.changePhoneNumber(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.<ChangePhoneNumberResponse>builder()
+                        .success(true)
+                        .message(response.getMessage())
+                        .data(response)
+                        .build()
+
+        );
+    }
+
+    @PostMapping("/change-pass")
+    public ResponseEntity<ApiResponse<ChangePasswordWithPhoneResponse>> changePasswordFOrPhone(@Valid @RequestBody ChangePasswordWithPhoneRequest request) {
+        ChangePasswordWithPhoneResponse response = authService.changePassword(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.<ChangePasswordWithPhoneResponse>builder()
+                        .success(true)
+                        .message(response.getMessage())
+                        .data(response)
+                        .build()
+        );
+    }
+
     // ✅ GOOGLE LOGIN
     @PostMapping("/google-login")
     public ResponseEntity<ApiResponse<TokenResponse>> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
@@ -142,4 +198,35 @@ public class AuthController {
                         .build()
         );
     }
+
+    @PostMapping("/forget-password")
+    private ResponseEntity<ApiResponse<ForgetPasswordResponse>> forgetPassword
+            (@Valid @RequestBody ForgetPasswordRequest request) {
+        ForgetPasswordResponse response = authService.forgetPassword(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.<ForgetPasswordResponse>builder()
+                        .success(true)
+                        .message(response.getMessage())
+                        .data(response)
+                        .errorCode(null)
+                        .build()
+        );
+    }
+
+    @PostMapping("/forget-password-verify-otp")
+    private ResponseEntity<ApiResponse<VerifyOtpResponse>> verifyOtp(@Valid @RequestBody VerifyOtpRequest verifyOtpRequest) {
+        VerifyOtpResponse response = authService.verifyOtp(verifyOtpRequest);
+
+        return ResponseEntity.ok(
+                ApiResponse.<VerifyOtpResponse>builder()
+                        .success(true)
+                        .message(response.getMessage())
+                        .data(response)
+                        .errorCode(null)
+                        .build()
+        );
+    }
+
+
 }

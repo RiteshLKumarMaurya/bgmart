@@ -1,7 +1,9 @@
 package com.biharigraphic.jilamart.user.exception;
 
-public class UserException extends RuntimeException{
-    public UserException(String  message){
-        super(message);
+import com.biharigraphic.jilamart.exception.base.AppException;
+
+public class UserException extends AppException {
+    public UserException(String message, String errorCode) {
+        super(message, errorCode);
     }
 }

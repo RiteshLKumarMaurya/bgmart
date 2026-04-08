@@ -5,6 +5,7 @@ import com.biharigraphic.jilamart.enums.OrderStatus;
 import com.biharigraphic.jilamart.cart.entity.Cart;
 import com.biharigraphic.jilamart.entity.CartItem;
 import com.biharigraphic.jilamart.entity.OrderItem;
+import com.biharigraphic.jilamart.notification.enums.NotificationType;
 import com.biharigraphic.jilamart.notification.service.NotificationService;
 import com.biharigraphic.jilamart.order.dto.CheckoutRequest;
 import com.biharigraphic.jilamart.order.dto.OrderResponse;
@@ -85,11 +86,15 @@ public class OrderServiceImpl implements OrderService {
 
         orderRepository.save(order);
 
+
         // 🔥 USER NOTIFICATION
         notificationService.sendToUser(
                 order.getUser(),
-                "Order Confirmed ✅",
-                "Your order has been placed successfully"
+                "Order Confirmed",
+                "Order placed successfully",
+                null,
+                "/orders/" + order.getId(),
+                NotificationType.ORDER
         );
 
         // 🔥 ADMIN NOTIFICATION

@@ -16,6 +16,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByPhoneNumber(String phoneNumber);
     Boolean existsByPhoneNumber(String phoneNumber);
 
+    Boolean existsByPhoneNumberAndPassword(String phoneNumber,String password);
+    Optional<User> findByPhoneNumberAndPassword(String phoneNumber,String password);
 
 
     boolean existsByUsername(String username);
@@ -30,6 +32,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
 
     List<User> findByRole_Name(RoleName roleName);
+
+    Boolean existsByEmailId(String emailId);
+    Optional<User> findByEmailId(String emailId);
+
+    Optional<User> findByPhoneNumberAndEmailId(String phoneNumber,String emailId);
+
+    Boolean existsByPhoneNumberAndEmailId(String phoneNumber,String emailId);
 
 
 

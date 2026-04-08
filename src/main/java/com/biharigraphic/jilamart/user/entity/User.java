@@ -61,8 +61,6 @@ public class User extends BaseEntity implements UserDetails {
     private SignInProvider provider; // GOOGLE / OTP
 
 
-    private String fcmToken;
-
     /* ---------- Spring Security UserDetails ---------- */
 
     @Override
@@ -89,4 +87,6 @@ public class User extends BaseEntity implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
+
+
 }

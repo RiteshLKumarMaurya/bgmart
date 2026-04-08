@@ -1,5 +1,7 @@
 package com.biharigraphic.jilamart.security;
 
+import com.biharigraphic.jilamart.enums.TokenType;
+import com.biharigraphic.jilamart.exception.enums.ErrorCode;
 import com.biharigraphic.jilamart.user.entity.User;
 import com.biharigraphic.jilamart.user.exception.UserException;
 import io.jsonwebtoken.Claims;
@@ -13,7 +15,6 @@ import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
-
 @Slf4j
 @Component
 public class JwtUtil {
@@ -21,82 +22,97 @@ public class JwtUtil {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
-    private final long accessTokenValidity = 1000 * 60 * 15; // 15 minutes
-    private final long refreshTokenValidity = 1000 * 60 * 60 * 24 * 7; // 7 days
+    private final Long accessTokenValidity = 1000 * 60 * 30L; // 30 min
+    private final Long refreshTokenValidity = 1000 * 60 * 60 * 24 * 28L; // 28 days
 
     private Key getSigningKey() {
         byte[] keyBytes = java.util.Base64.getDecoder().decode(jwtSecret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // Generate Access Token
+    // ✅ ACCESS TOKEN
     public String generateAccessToken(User user) {
-
-        String username,role;
-
-        if (user==null)
-            throw new UserException("Exception user null to generate accessToken!");
-        else {
-            username=user.getUsername();
-            role=user.getRole().getName().name();
-        }
-
-
-        log.info("Generating access token...");
-        return Jwts.builder()
-                .setSubject(username)
-                .claim("role", role) // single role
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + accessTokenValidity))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-                .compact();
+        return buildToken(user, accessTokenValidity, "ACCESS_TOKEN");
     }
 
-    // Generate Refresh Token
+    // ✅ REFRESH TOKEN
     public String generateRefreshToken(User user) {
-        String username,role;
+        return buildToken(user, refreshTokenValidity, "REFRESH_TOKEN");
+    }
 
-        if (user==null)
-            throw new UserException("Exception user null to generate accessToken!");
-        else {
-            username=user.getUsername();
-            role=user.getRole().getName().name();
-        }
+    private String buildToken(User user, long validity, String type) {
+        if (user == null)
+            throw new UserException("User is null", ErrorCode.INVALID_USER.name());
+
+
+        Date now = new Date();
+        Date expiry = new Date(System.currentTimeMillis() + validity);
+
+        log.info("NOW: {}", now);
+        log.info("EXPIRY: {}", expiry);
+
         return Jwts.builder()
-                .setSubject(username)
-                .claim("role", role) // single role
+                .setSubject(user.getPhoneNumber())
+                .claim("role", user.getRole().getName().name())
+                .claim("type", type) // 🔥 important
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + refreshTokenValidity))
+                .setExpiration(new Date(System.currentTimeMillis() + validity))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+
+
     }
 
-    // Extract username
-    public String extractUsername(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
-    }
-
-    // Extract single role
-    public String extractRole(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-        return claims.get("role", String.class);
-    }
-
-    // Validate token
-    public boolean isTokenValid(String token) {
+    // ✅ Extract Claims (handles expired token)
+    public Claims extractAllClaims(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token);
-            return true;
-        } catch (JwtException | IllegalArgumentException e) {
+            return Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            return e.getClaims(); // 🔥 very important
+        }
+    }
+
+    public String extractUsername(String token) {
+        return extractAllClaims(token).getSubject();
+    }
+
+    public String extractRole(String token) {
+        return extractAllClaims(token).get("role", String.class);
+    }
+
+    public String extractType(String token) {
+        return extractAllClaims(token).get("type", String.class);
+    }
+
+    // ✅ Validate ACCESS token
+    public boolean isAccessTokenValid(String token,TokenType type) {
+        return isTokenValid(token, type);
+    }
+
+    // ✅ Validate REFRESH token
+    public boolean isRefreshTokenValid(String token, TokenType type) {
+        return isTokenValid(token,type);
+    }
+
+    public boolean isTokenValid(String token, TokenType expectedType) {
+        try {
+            Claims claims = extractAllClaims(token);
+
+            String type = claims.get("type", String.class);
+
+            if (!expectedType.name().equals(type)) {
+                log.error("Invalid token type");
+                return false;
+            }
+
+            return claims.getExpiration().after(new Date());
+
+        } catch (JwtException e) {
+            log.error("JWT error: {}", e.getMessage());
             return false;
         }
     }

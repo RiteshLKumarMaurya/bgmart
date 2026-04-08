@@ -6,5 +6,6 @@ public enum SignInProvider {
     FACEBOOK,
     USERNAME_PASSWORD,
     EMAIL_PASSWORD,
-    GUEST
+    GUEST,
+    PHONE_PASSWORD
 }

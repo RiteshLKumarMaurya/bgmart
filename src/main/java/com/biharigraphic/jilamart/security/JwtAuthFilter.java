@@ -1,10 +1,12 @@
 package com.biharigraphic.jilamart.security;
 
+import com.biharigraphic.jilamart.enums.TokenType;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,6 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
@@ -24,32 +27,48 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
+
 
         final String authHeader = request.getHeader("Authorization");
+        log.info("authorization{}", authHeader);
 
+        // ❌ No token → just continue
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authHeader.substring(7);
-        if (!jwtUtil.isTokenValid(token)) {
+        // ✅ Extract token properly
+        String token = authHeader.substring(7).trim();
+
+
+        // ❌ Invalid token → skip auth
+        if (!jwtUtil.isTokenValid(token, TokenType.valueOf(jwtUtil.extractType(token)))) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String username = jwtUtil.extractUsername(token);
-        String role = jwtUtil.extractRole(token); // single role
+        // ✅ Extract data
+        String phoneNumber = jwtUtil.extractUsername(token);
+        String role = jwtUtil.extractRole(token);
 
-        // Single authority
-        var authorities = Collections.singletonList(new SimpleGrantedAuthority(role));
-
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                username, null, authorities
+        // ✅ Authority
+        var authorities = Collections.singletonList(
+                new SimpleGrantedAuthority(role)
         );
 
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(
+                        phoneNumber,
+                        null,
+                        authorities
+                );
+
         auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+        // ✅ Set authentication
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         filterChain.doFilter(request, response);

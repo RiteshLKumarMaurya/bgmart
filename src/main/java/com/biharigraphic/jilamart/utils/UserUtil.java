@@ -1,5 +1,6 @@
 package com.biharigraphic.jilamart.utils;
 
+import com.biharigraphic.jilamart.exception.enums.ErrorCode;
 import com.biharigraphic.jilamart.security.JwtUtil;
 import com.biharigraphic.jilamart.user.entity.User;
 import com.biharigraphic.jilamart.user.exception.UserException;
@@ -27,12 +28,11 @@ public class UserUtil {
             throw new RuntimeException("Invalid Authorization header");
         }
 
-        // ✅ Extract username
-        String username = jwtUtil.extractUsername(jwt);
+        String phoneNumber = jwtUtil.extractUsername(jwt);
 
-        if (username != null) {
-            user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new UserException("User not found with username: " + username));
+        if (phoneNumber != null) {
+            user = userRepository.findByPhoneNumber(user.getPhoneNumber())
+                    .orElseThrow(() -> new UserException("User not found with phone: " + phoneNumber, ErrorCode.PHONE_NUMBER_NOT_FOUND.name()));
         }
         return user;
     }

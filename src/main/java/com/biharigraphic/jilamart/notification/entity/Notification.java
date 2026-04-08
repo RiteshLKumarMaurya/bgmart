@@ -1,11 +1,9 @@
 package com.biharigraphic.jilamart.notification.entity;
 
 import com.biharigraphic.jilamart.entity.BaseEntity;
+import com.biharigraphic.jilamart.notification.enums.NotificationType;
 import com.biharigraphic.jilamart.user.entity.User;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,4 +21,11 @@ public class Notification extends BaseEntity {
 
     @Column(name = "is_read")
     private Boolean read = false;
+
+    @Enumerated(EnumType.STRING)
+    private NotificationType notificationType;
+
+    private String imageUrl;
+    private String redirectUrl; // deep link
+
 }
