@@ -9,6 +9,7 @@ import com.biharigraphic.jilamart.auth.dto.response.ChangePasswordResponse;
 import com.biharigraphic.jilamart.auth.dto.response.ChangeUsernameResponse;
 import com.biharigraphic.jilamart.auth.dto.response.RefreshTokenResponse;
 import com.biharigraphic.jilamart.enums.TokenType;
+import jakarta.transaction.Transactional;
 
 public interface AuthService {
 

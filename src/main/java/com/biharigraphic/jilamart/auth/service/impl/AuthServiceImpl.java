@@ -38,6 +38,7 @@ import com.biharigraphic.jilamart.user.mapper.impl.UserMapperImpl;
 import com.biharigraphic.jilamart.user.repository.UserRepository;
 import com.biharigraphic.jilamart.utils.UserUtil;
 import com.biharigraphic.jilamart.wallet.service.WalletService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -265,39 +266,46 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public ForgetPasswordResponse forgetPassword(ForgetPasswordRequest request) {
 
-        //first check the coming phone number and the email are same user or not
         if (!userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
-            throw new PhoneNumberNotFoundException("user does not exists with phone: " + request.getPhoneNumber(), ErrorCode.PHONE_NUMBER_NOT_FOUND.name());
+            throw new PhoneNumberNotFoundException(
+                    "User does not exist with phone: " + request.getPhoneNumber(),
+                    ErrorCode.PHONE_NUMBER_NOT_FOUND.name()
+            );
         }
+
         if (!userRepository.existsByEmailId(request.getEmailId())) {
-            throw new UserException("user not exists with email: " + request.getEmailId(), ErrorCode.EMAIL_NOT_REGISTERED.name());
-        } //now find the user by phone and match the both thin
-        
-        User user = userRepository.findByPhoneNumberAndEmailId(request.getPhoneNumber(), request.getEmailId()).orElseThrow(() -> new UserException("User phone and email both are not of the same user!", ErrorCode.PHONE_EMAIL_NOT_OF_USER.name()));
+            throw new UserException(
+                    "User does not exist with email: " + request.getEmailId(),
+                    ErrorCode.EMAIL_NOT_REGISTERED.name()
+            );
+        }
 
+        User user = userRepository
+                .findByPhoneNumberAndEmailId(request.getPhoneNumber(), request.getEmailId())
+                .orElseThrow(() -> new UserException(
+                        "Phone and Email do not belong to same user",
+                        ErrorCode.PHONE_EMAIL_NOT_OF_USER.name()
+                ));
 
-        // generate OTP
+        // OTP generate
         String otp = String.valueOf(new Random().nextInt(900000) + 100000);
-
 
         Otp otpEntity = new Otp();
         otpEntity.setEmail(user.getEmailId());
         otpEntity.setOtp(otp);
-        otpEntity.setExpiryTime(Instant.now().plusSeconds(300)); // 5 min
+        otpEntity.setExpiryTime(Instant.now().plusSeconds(300));
 
         otpRepository.save(otpEntity);
 
-        // send email
-        log.info("Before sending email");
+        log.info("📩 Sending OTP to: {}", user.getEmailId());
 
+        // ❌ try-catch mat lagao yaha
         emailService.sendOtp(user.getEmailId(), otp);
-
-        log.info("After sending email");
 
         return new ForgetPasswordResponse("OTP sent successfully");
     }
-
     @Override
+    @Transactional
     public VerifyOtpResponse verifyOtp(VerifyOtpRequest request) {
 
 //        userRepository.findByPhoneNumberAndEmailId(request.getPhoneNumber(), request.getEmailId()).orElseThrow(() -> new UserException("Invalid phone or email"));
@@ -306,7 +314,7 @@ public class AuthServiceImpl implements AuthService {
         if (!userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
             throw new PhoneNumberNotFoundException("user does not exists with phone: " + request.getPhoneNumber(), ErrorCode.PHONE_NUMBER_NOT_FOUND.name());
         }
-        if (!userRepository.existsByEmailId(request.getPhoneNumber())) {
+        if (!userRepository.existsByEmailId(request.getEmailId())) {
             throw new UserException("user not exists with email: " + request.getEmailId(), ErrorCode.EMAIL_NOT_REGISTERED.name());
         } //now find the user by phone and match the both thin
 
@@ -331,6 +339,11 @@ public class AuthServiceImpl implements AuthService {
         //now we can do  verify it
         otp.setUsed(true);
 
+        //todo: delete Otp which has to be done the verification ...
+
+        //so first now delete all  the otps of this user
+
+        otpRepository.deleteByEmail(request.getEmailId());
         return new VerifyOtpResponse("Otp verification success!");
     }
 
